@@ -1,7 +1,7 @@
-import requests 
-from bs4 import BeautifulSoup 
+import requests
+from bs4 import BeautifulSoup
 
-targetURL = "http://buy.sinyi.com.tw/list/"
+targetURL = "https://www.sinyi.com.tw/communitylist"
 
 def findTypeClass(pageFind):
     getList = []
@@ -47,6 +47,11 @@ def findFunctionClass(pageFind):
     return set(returnList)
 
 if __name__ == "__main__":
-    pages = 3
-    print("屋型包含： ", findTypeClass(pages))
-    print("房屋機能： ", findFunctionClass(pages))
+    # pages = 3
+    # print("屋型包含： ", findTypeClass(pages))
+    # print("房屋機能： ", findFunctionClass(pages))
+
+
+    # Test for community
+    
+
