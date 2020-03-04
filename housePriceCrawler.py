@@ -5,11 +5,6 @@ import csv
 import requests #網頁資源(URL)擷取套件
 from bs4 import BeautifulSoup #HTML剖析套件
 
-targetURL = "https://www.sinyi.com.tw/communitylist/"
-city = "Taipei-city"
-condition = "/uniprice-desc/"
-targetURL = targetURL + city + condition
-
 resultFile = "housePrice.csv"
 
 def countItem(pages, url):
@@ -97,8 +92,6 @@ def housePattern(patternList):
         
     return resultList
 
-
-
 def houseType(typeStr):
     """
     處理屋型的函數，主要將字串以“、”切割開來
@@ -175,92 +168,103 @@ def findAllPageNumber(cityName):
 
 if __name__ == '__main__':
     
-    print('If you want to crawl all page data, input number -1.')
-    pages = int(input('Input how much pages you want to crawl：'))
-    city_name = "Taipei-city"
-    
-    if(pages == -1):
-        pages = findAllPageNumber(city_name)
-    
-    total_items = 0
-    
+    # print('If you want to crawl all page data, input number -1.')
+    # pages = int(input('Input how much pages you want to crawl：'))
+
+    cityList = ["Taipei-city", "NewTaipei-city", "Hsinchu-city", 
+    "Hsinchu-county", "Taoyuan-city", "Taichung-city", "Changhua-county",
+    "Tainan-city", "Kaohsiung-city", ""]
+
+    targetURL = "https://www.sinyi.com.tw/communitylist/"
+    condition = "/uniprice-desc/"
     resultList = []
-    
-    start = time.time()
-    print('Start parsing sinyi house price ....')
-    
-    items = 0
-    total_items = countItem(pages,targetURL)
 
-    print('共%d項房屋資訊' % total_items)
-    
-    #地址、屋況(houseSize)、格局(housePattern)、屋型(houseType)、機能(houseFunction)、房價(萬)
-    for i in range(1, pages+1):
-        itemURL = targetURL + str(i) +".html" #http://buy.sinyi.com.tw/list/i.html 
-        result = requests.get(itemURL)
-        soup = BeautifulSoup(result.text,'html.parser')
+    for city_name in cityList:
+
+        targetURL = targetURL + city_name + condition
+
+        pages = findAllPageNumber(city_name)
         
-        itemsParent = soup.find('div', attrs={'id':'communitySearchListContent'})
-        items = itemsParent.find_all('a')
-        for item in items:
-            houseInfo = []
-            address = item.find('div', attrs={'class', 'LongInfoCard_Type_Address'}).text.strip()   #地址
-            # footage = item.find('div', attrs={'class', 'LongInfoCard_Type_HouseInfo'}).find_all('span')  #坪數
-            footageItem = item.select(".LongInfoCard_Type_HouseInfo > span:nth-child(3)")[0].text
-            if "坪" in footageItem:
-                footRange = footageItem[:-1].split('~')
-                footMin, footMax = int(float(footRange[0])), int(float(footRange[1]))
-                footage = str(int((footMin + footMax) / 2))
-            else:
-                footage = "None"
+        total_items = 0
+        
+        start = time.time()
+        print('Start parsing ' + city_name + " house price")
+        
+        itemCounter = 0
+        total_items = countItem(pages,targetURL)
 
-            c = input()
-
-            # if len(footage) <= 3:
-            #     footage = "None"
-            # else:
-            # for ith, span in enumerate(footage):
-            #     if ith == 3
-
-
-            houseInfo.append(address)
-            houseInfo.append(footage)
-
-
-        #     houseInfo += houseSize(item.select('.detail_line2')[0].text.strip().split())                   #屋況
-        #     houseInfo += housePattern(item.select('.detail_line2')[1].text.strip().split())                #格局
-        #     houseInfo += houseType(item.select('.detail_line1 span:nth-of-type(2)')[0].text.strip())       #屋型
+        print('共%d項房屋資訊' % total_items)
+        
+        #地址、屋況(houseSize)、格局(housePattern)、屋型(houseType)、機能(houseFunction)、房價(萬)
+        for i in range(1, pages+1):
+            itemURL = targetURL + str(i) +".html" #http://buy.sinyi.com.tw/list/i.html 
+            result = requests.get(itemURL)
+            soup = BeautifulSoup(result.text,'html.parser')
             
-    #         if len(item.select('.detail_tagGroup')) > 0:
-    #             funConvert = []
-    #             for f in range(0,len(item.select('div.detail_tagGroup > div.detail_tag'))):
-    #                 funConvert.append(item.select('div.detail_tagGroup > div.detail_tag')[f].text)          #機能                                                      
-    #         else:
-    #             funConvert = []
-    #         houseInfo += houseFunction(funConvert)
-            
-    #         houseInfo.append(float(item.select('.price_new')[0].text.strip().split()[0].replace(',','')))  #房價(萬)
-    #         resultList.append(houseInfo)
-            
-    #         items += 1
-    #         #print(items)
-    #         randval = random.randint(0, 10)
-    #         if randval%5 == 0:
-    #             print('Crawler: {:.2%}'.format(items / total_items))   
+            itemsParent = soup.find('div', attrs={'id':'communitySearchListContent'})
+            items = itemsParent.find_all('a')
+            for item in items:
+                houseInfo = []
+                address = item.find('div', attrs={'class', 'LongInfoCard_Type_Address'}).text.strip().replace(',', '//')   #地址\
+                footageItem = item.select(".LongInfoCard_Type_HouseInfo > span:nth-child(3)")   #坪數
+                if len(footageItem) == 0:
+                    footage = "None"
+                else:
+                    footageText = footageItem[0].text
+                    if "坪" in footageText:
+                        footRange = footageText[:-1].split('~')
+                        footMin, footMax = int(float(footRange[0])), int(float(footRange[1]))
+                        footage = str(int((footMin + footMax) / 2))
+                    else:
+                        footage = "None"
+                
+                priceItem = item.select(".LongInfoCard_Type_Right > div:nth-child(2) > span:nth-child(1)")   #單坪房價
+                if len(priceItem) == 0:
+                    price = "None"
+                else:
+                    price = priceItem[0].text
+
+                community = item.find('div', attrs={'class':'LongInfoCard_Type_Name'}).text.strip()   #社區名
+
+                houseInfo.append(city_name)
+                houseInfo.append(address)
+                houseInfo.append(community)
+                houseInfo.append(price)
+                houseInfo.append(footage)
+
+            #     houseInfo += houseSize(item.select('.detail_line2')[0].text.strip().split())                   #屋況
+            #     houseInfo += housePattern(item.select('.detail_line2')[1].text.strip().split())                #格局
+            #     houseInfo += houseType(item.select('.detail_line1 span:nth-of-type(2)')[0].text.strip())       #屋型
+                
+        #         if len(item.select('.detail_tagGroup')) > 0:
+        #             funConvert = []
+        #             for f in range(0,len(item.select('div.detail_tagGroup > div.detail_tag'))):
+        #                 funConvert.append(item.select('div.detail_tagGroup > div.detail_tag')[f].text)          #機能                                                      
+        #         else:
+        #             funConvert = []
+        #         houseInfo += houseFunction(funConvert)
+                
+        #         houseInfo.append(float(item.select('.price_new')[0].text.strip().split()[0].replace(',','')))  #房價(萬)
+                resultList.append(houseInfo)
+                
+                itemCounter += 1
+                #print(items)
+                if itemCounter % 20 == 0:
+                    print('Crawler: {:.2%}'.format(itemCounter / total_items)) 
+        
+        #with open(fileName, 'wb') as f:
+        #    f.write(content.encode('utf8'))
+        
+    with open(resultFile, 'w', encoding='utf-8') as csvfile:
+        filewriter = csv.writer(csvfile, delimiter=',' ,quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for result in resultList:
+            filewriter.writerow(result)
     
-    # #with open(fileName, 'wb') as f:
-    # #    f.write(content.encode('utf8'))
+    print('花費: %f 秒' % (time.time() - start))
+    print('----------END----------')
     
-    # with open(resultFile, 'w', encoding='utf-8') as csvfile:
-    #     filewriter = csv.writer(csvfile, delimiter=',' ,quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    #     for result in resultList:
-    #         filewriter.writerow(result)
-    
-    # print('花費: %f 秒' % (time.time() - start))
-    # print('----------END----------')
-    
-    # print()
-    # print()
-    # print('前10項房屋資訊：')
-    # for result in resultList[:10]:
-    #     print(result)
+    print()
+    print()
+    print('前10項房屋資訊：')
+    for result in resultList[:10]:
+        print(result)
