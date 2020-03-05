@@ -175,13 +175,13 @@ if __name__ == '__main__':
     "Hsinchu-county", "Taoyuan-city", "Taichung-city", "Changhua-county",
     "Tainan-city", "Kaohsiung-city", ""]
 
-    targetURL = "https://www.sinyi.com.tw/communitylist/"
+    origTargetURL = "https://www.sinyi.com.tw/communitylist/"
     condition = "/uniprice-desc/"
     resultList = []
 
     for city_name in cityList:
 
-        targetURL = targetURL + city_name + condition
+        targetURL = origTargetURL + city_name + condition
 
         pages = findAllPageNumber(city_name)
         
@@ -197,7 +197,7 @@ if __name__ == '__main__':
         
         #地址、屋況(houseSize)、格局(housePattern)、屋型(houseType)、機能(houseFunction)、房價(萬)
         for i in range(1, pages+1):
-            itemURL = targetURL + str(i) +".html" #http://buy.sinyi.com.tw/list/i.html 
+            itemURL = targetURL + str(i) +".html"
             result = requests.get(itemURL)
             soup = BeautifulSoup(result.text,'html.parser')
             
@@ -205,7 +205,7 @@ if __name__ == '__main__':
             items = itemsParent.find_all('a')
             for item in items:
                 houseInfo = []
-                address = item.find('div', attrs={'class', 'LongInfoCard_Type_Address'}).text.strip().replace(',', '//')   #地址\
+                address = item.find('div', attrs={'class', 'LongInfoCard_Type_Address'}).text.strip().replace(',', '//')   #地址
                 footageItem = item.select(".LongInfoCard_Type_HouseInfo > span:nth-child(3)")   #坪數
                 if len(footageItem) == 0:
                     footage = "None"
@@ -226,9 +226,22 @@ if __name__ == '__main__':
 
                 community = item.find('div', attrs={'class':'LongInfoCard_Type_Name'}).text.strip()   #社區名
 
+                numHouseItem = item.find('div', attrs={'class':'LongInfoCard_Type_HouseInfo'})   #戶數
+                numHouse = numHouseItem.findChildren("span", recursive=False)[-1].text[:-1]
+
+                communityHref = "https://www.sinyi.com.tw" + item['href']
+                communityResult = requests.get(communityHref)
+                communitySoup = BeautifulSoup(communityResult.text,'html.parser')
+                try:
+                    districtName = communitySoup.select(".trade-obj-card-web > div:nth-child(2)")[0].text[3:6]
+                except:
+                    districtName = "None"
+
                 houseInfo.append(city_name)
+                houseInfo.append(districtName)
                 houseInfo.append(address)
                 houseInfo.append(community)
+                houseInfo.append(numHouse)
                 houseInfo.append(price)
                 houseInfo.append(footage)
 
