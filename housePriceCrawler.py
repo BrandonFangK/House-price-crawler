@@ -173,7 +173,7 @@ if __name__ == '__main__':
 
     cityList = ["Taipei-city", "NewTaipei-city", "Hsinchu-city", 
     "Hsinchu-county", "Taoyuan-city", "Taichung-city", "Changhua-county",
-    "Tainan-city", "Kaohsiung-city", ""]
+    "Tainan-city", "Kaohsiung-city"]
 
     origTargetURL = "https://www.sinyi.com.tw/communitylist/"
     condition = "/uniprice-desc/"
