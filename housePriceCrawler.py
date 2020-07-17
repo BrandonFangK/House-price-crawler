@@ -5,7 +5,6 @@ import csv
 import requests #網頁資源(URL)擷取套件
 from bs4 import BeautifulSoup #HTML剖析套件
 
-resultFile = "housePrice.csv"
 
 def countItem(pages, url):
     # 直接抓第一頁的搜尋結果
@@ -171,15 +170,20 @@ if __name__ == '__main__':
     # print('If you want to crawl all page data, input number -1.')
     # pages = int(input('Input how much pages you want to crawl：'))
 
-    cityList = ["Taipei-city", "NewTaipei-city", "Hsinchu-city", 
+    # cityList = ["Taipei-city", "NewTaipei-city", "Hsinchu-city", 
+    # "Hsinchu-county", "Taoyuan-city", "Taichung-city", "Changhua-county",
+    # "Tainan-city", "Kaohsiung-city"]
+
+    cityList = ["NewTaipei-city", "Hsinchu-city", 
     "Hsinchu-county", "Taoyuan-city", "Taichung-city", "Changhua-county",
     "Tainan-city", "Kaohsiung-city"]
 
     origTargetURL = "https://www.sinyi.com.tw/communitylist/"
     condition = "/uniprice-desc/"
-    resultList = []
 
     for city_name in cityList:
+
+        resultList = []
 
         targetURL = origTargetURL + city_name + condition
 
@@ -228,7 +232,7 @@ if __name__ == '__main__':
 
                 numHouseItem = item.find('div', attrs={'class':'LongInfoCard_Type_HouseInfo'})   #戶數
                 numHouse = numHouseItem.findChildren("span", recursive=False)[-1].text[:-1]
-
+                beenYear = numHouseItem.findChildren("span", recursive=False)[0].text[:-1]   #屋齡
                 communityHref = "https://www.sinyi.com.tw" + item['href']
                 communityResult = requests.get(communityHref)
                 communitySoup = BeautifulSoup(communityResult.text,'html.parser')
@@ -241,6 +245,7 @@ if __name__ == '__main__':
                 houseInfo.append(districtName)
                 houseInfo.append(address)
                 houseInfo.append(community)
+                houseInfo.append(beenYear)
                 houseInfo.append(numHouse)
                 houseInfo.append(price)
                 houseInfo.append(footage)
@@ -268,10 +273,13 @@ if __name__ == '__main__':
         #with open(fileName, 'wb') as f:
         #    f.write(content.encode('utf8'))
         
-    with open(resultFile, 'w', encoding='utf-8') as csvfile:
-        filewriter = csv.writer(csvfile, delimiter=',' ,quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        for result in resultList:
-            filewriter.writerow(result)
+        resultFile = "housePrice" + city_name + ".csv"
+
+
+        with open(resultFile, 'w', encoding='utf-8') as csvfile:
+            filewriter = csv.writer(csvfile, delimiter=',' ,quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            for result in resultList:
+                filewriter.writerow(result)
     
     print('花費: %f 秒' % (time.time() - start))
     print('----------END----------')
